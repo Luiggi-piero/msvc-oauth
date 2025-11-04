@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.GrantedAuthority;
@@ -24,11 +26,14 @@ import com.luiggi.springcloud.msvc.oauth.models.User;
 @Service
 public class UsersService implements UserDetailsService {
 
+    private final Logger logger = LoggerFactory.getLogger(UsersService.class);
+
     @Autowired
     private WebClient.Builder client;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        logger.info("Ingresando al proceso de login UsersService::loadUserByUsername con {}", username);
 
         Map<String, String> params = new HashMap<>();
         params.put("username", username);
@@ -46,6 +51,7 @@ public class UsersService implements UserDetailsService {
                     .collect(Collectors.toList());
 
             // Este User es de spring security NO de models de este proyecto
+            logger.info("Sesión iniciada con exito by username", user);
             return new org.springframework.security.core.userdetails.User(
                     user.getUsername(),
                     user.getPassword(),
@@ -56,8 +62,9 @@ public class UsersService implements UserDetailsService {
                     roles);
 
         } catch (WebClientResponseException e) {
-            throw new UsernameNotFoundException(
-                    "Error en el login, no existe el usuario '" + username + "' en el sistema");
+            String error = "Error en el login, no existe el usuario '" + username + "' en el sistema";
+            logger.error(error);
+            throw new UsernameNotFoundException(error);
         }
     }
 
